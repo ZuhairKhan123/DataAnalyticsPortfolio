@@ -1,0 +1,222 @@
+-- Creating the tables Customers, Orders, Products
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Customers' AND xtype='U')
+CREATE TABLE Customers(
+	customer_id		INTEGER PRIMARY KEY,
+	first_name		NVARCHAR(50),
+	last_name		NVARCHAR(50),
+	city			NVARCHAR(100),
+	country			NVARCHAR(100),
+	registration_date DATE
+);
+
+IF NOT EXISTS(SELECT * FROM sysobjects WHERE name='Products' AND xtype='U') 
+CREATE TABLE Products(
+	product_id		INTEGER PRIMARY KEY,
+	product_name	TEXT,
+	category		TEXT,
+	price			DECIMAL(10,2)
+);
+
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Orders' AND xtype='U')
+CREATE TABLE Orders(
+	order_id		INTEGER PRIMARY KEY,
+	customer_id		INT REFERENCES Customers(customer_id),
+	product_id		INT REFERENCES Products(product_id),
+	order_date		DATE,
+	quantity		INT
+);
+
+INSERT INTO Customers (customer_id, first_name, last_name, city, country, registration_date) VALUES
+(1, 'Alex', 'Johnson', 'New York', 'USA', '2021-03-15'),
+(2, 'Bob', 'Smith', 'Los Angeles', 'USA','2021-07-22'),
+(3, 'Clara', 'Garcia', 'Paris', 'France', '2021-01-10'),
+(4, 'David', 'Smith', NULL, 'Malaysia','2022-05-14'),
+(5, 'Elena', 'Rossi', 'Rome', 'Italy','2022-11-30'),
+(6, 'Frank', 'Khan', 'London', 'UK','2022-04-01'),
+(7, 'Grace', 'Reista', 'Jakarta', 'Indonesia','2023-01-10'),
+(8, 'Sahil', 'Hawa', 'Nerobi', 'Kenya','2023-08-22'),
+(9, 'Taylor', 'Swift', 'Chicago', 'USA','2023-02-19'),
+(10, 'Zuhair', 'Khan', 'Houston', 'USA','2023-10-29')
+
+
+
+INSERT INTO Products (product_id, product_name, category, price) VALUES
+(1, 'Laptop Pro', 'Electronics', 1999),
+(2, 'Headphones', 'Electronics', 149),
+(3, 'USB-C Cable', 'Electronics', 15),
+(4, 'iPhone 13 Pro Max', 'Winter Jacket', 599),
+(5, 'Coffee Machine', 'Home', 120),
+(6, 'Blender Pro', 'Home', 60),
+(7, 'Phone Case', 'Accessories', 20),
+(8, 'Samsung A11+ Tablet', 'Sports', 55),
+(9, 'Smartphone x12', 'Mobile', 55),
+(10, 'Running Shoes', 'Apparel', 170)
+
+INSERT INTO Orders(order_id, customer_id, product_id, order_date, quantity) VALUES
+(1,1,1,'2023-08-22',3),
+(2,3,4,'2021-04-12',1),
+(3,5,1,'2022-11-30',5),
+(4,2,5,'2021-08-15',7),
+(5,2,4,'2022-07-05',6),
+(6,6,3,'2023-02-26',1),
+(7,2,5,'2022-10-01',2),
+(8,7,3,'2023-04-17',2),
+(9,2,6,'2022-01-14',7),
+(10,1,4,'2023-09-09',2)
+
+
+SELECT * FROM dbo.Customers
+SELECT * FROM dbo.Orders
+SELECT * FROM dbo.Products
+
+
+-- Task 1: Basic SQL Queries for Data Science
+
+-- Task 1.1 Product Name and price
+SELECT product_name, price
+FROM Products
+WHERE category = 'Electronics';
+
+-- Task 1.2 Check first_name, last_name, city
+SELECT first_name, last_name, city
+FROM Customers
+WHERE country = 'USA'
+
+-- Task 1.3 Orders placed after 2023-01-01 ordered by order_date DESC
+SELECT *
+FROM Orders
+WHERE order_date > '2023-01-01'
+ORDER BY order_date DESC
+
+
+-- Task 1.4 Products with price between $50 and $200
+SELECT product_name, price
+FROM Products
+WHERE price BETWEEN 50 AND 200;
+
+-- Task 1.5 Customers where city is Null
+SELECT *
+FROM Customers
+WHERE city IS NULL;
+
+-- Task 1.6 Unique category from the products table
+SELECT DISTINCT category
+FROM Products;
+
+-- Task 1.7 Product names containing the word "phone"
+SELECT product_name
+FROM Products 
+WHERE product_name LIKE '%phone%'
+
+-- Task 1.8 Top 5 most recent orders
+SELECT TOP 5 *
+FROM Orders
+ORDER BY order_date DESC;
+
+
+-- Part 2: Aggregate Functions and Grouping Data
+
+-- Task 2.1: Total orders placed by each customer
+SELECT customer_id, COUNT(order_id) AS total_orders
+FROM Orders
+GROUP BY customer_id
+
+-- Task 2.2: Average price of products in each category
+SELECT category, ROUND(AVG(price), 2) AS avg_price
+FROM Products 
+GROUP BY category;
+
+-- Task 2.3: Categories with average product price > $100
+SELECT category, ROUND(AVG(price), 2) AS avg_price
+FROM Products
+GROUP BY category
+HAVING AVG(price) >100
+
+-- Task 2.4 Customers who placed more than 3 orders
+SELECT customer_id, COUNT(order_id) AS total_orders
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(order_id) > 3;
+
+
+-- Part 3: Joining Data from Multiple Tables
+
+-- Task 3.1: Combining Data (customer_id, first_name, last_name and total orders)
+SELECT	c.customer_id,
+		c.first_name,
+		c.last_name,
+		COUNT(o.order_id) AS total_orders
+FROM Customers c
+JOIN Orders o ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.first_name, c.last_name;
+
+-- Task 3.2: Using Different Join Types (LEFT and INNER Join)
+SELECT	o.order_id,
+		p.product_name,
+		CONCAT(c.first_name, ' ', c.last_name) AS customer_name
+FROM Orders o
+JOIN Customers c ON o.customer_id = c.customer_id
+JOIN Products p ON o.product_id = p.product_id;
+
+-- Task 3.3: LEFT JOIN - All Customers
+SELECT	c.customer_id,
+		c.first_name,
+		c.last_name,
+		o.order_id,
+		o.order_date
+FROM Customers c
+LEFT JOIN Orders o ON c.customer_id = o.customer_id;
+
+-- Task 3.4 INNER JOIN (Customer and Product)
+SELECT	o.order_id,
+		CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+				p.product_name,
+				o.order_date,
+				o.quantity
+		FROM Orders o
+		INNER JOIN Customers c ON o.customer_id = c.customer_id
+		INNER JOIN Products p ON o.product_id = p.product_id;
+
+
+-- PART 4: Data Cleaning and Transformation
+
+-- Task 4.1: Replace NULL city values with 'Unknown'
+UPDATE Customers
+SET city = 'Unknown'
+WHERE city IS NULL;
+
+-- Task 4.2: Using COALESCE function
+SELECT	customer_id,
+		first_name,
+		last_name,
+		COALESCE(city, 'Unknown') AS city,
+		country
+FROM Customers
+
+-- Task 4.3: Convert order_date to string format (YYYY-MM)
+SELECT	order_id,
+		FORMAT(order_date,'yyyy-MM') AS order_year_month
+FROM Orders;
+
+-- Task 4.4: Concatenate first and last names into full_names
+SELECT	customer_id,
+		CONCAT(first_name, ' ', last_name) AS full_name,
+				city,
+				country
+FROM Customers
+
+
+-- Task 4.5: Remove Duplicates based on order_id
+WITH CTE_Duplicates AS (
+	SELECT *,
+		ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY order_id) AS rn
+	FROM Orders
+)
+DELETE FROM CTE_Duplicates
+WHERE rn > 1
+
+-- Task 4.6: REMOVE Products with 0 pricing
+DELETE FROM Products
+WHERE price < 0;
